@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>EnR Connect</title>
+<style>
+body{background:#111;color:white;font-family:Arial;padding:15px}
+input,button{padding:13px;margin:5px 0;width:100%;border-radius:10px;border:none;box-sizing:border-box}
+button{background:#00c853;color:white;font-weight:bold}
+.carte{background:#222;padding:12px;border-radius:12px;margin:10px 0}
+.btn-modif{background:#ff9800}
+.btn-retirer{background:#ff3d00}
+.btn-export{background:#2196F3}
+</style>
+</head>
+<body>
+<h2>EnR Connect</h2>
+<p id="compteur">0 étudiants</p>
+<input id="nom" placeholder="Nom complet">
+<input id="tel" placeholder="Téléphone">
+<input id="classe" placeholder="Classe ex: ER1">
+<button id="btnAjouter" onclick="ajouter()">+ Ajouter</button>
+<button class="btn-export" onclick="exporter()">📤 Exporter / Copier la liste</button>
+<h3>Recherche :</h3>
+<input id="recherche" placeholder="Chercher un nom ou une classe..." oninput="afficher()">
+<h3>Liste :</h3>
+<div id="liste">Aucun étudiant pour le moment</div>
+<script>
+let etudiants = JSON.parse(localStorage.getItem('enr') || '[]');
+let editIndex = -1;
+function ajouter(){
+  let nom = document.getElementById('nom').value;
+  let tel = document.getElementById('tel').value;
+  let classe = document.getElementById('classe').value;
+  if(nom === ""){ alert("Mets le nom d'abord"); return; }
+  if(editIndex === -1){
+    etudiants.push({nom:nom, tel:tel, classe:classe});
+    alert("Ajouté ! Descends pour voir la liste");
+  } else {
+    etudiants[editIndex] = {nom:nom, tel:tel, classe:classe};
+    editIndex = -1;
+    document.getElementById('btnAjouter').innerText = "+ Ajouter";
+    alert("Modifié !");
+  }
+  localStorage.setItem('enr', JSON.stringify(etudiants));
+  document.getElementById('nom').value = "";
+  document.getElementById('tel').value = "";
+  document.getElementById('classe').value = "";
+  afficher();
+}
+function modifier(i){
+  editIndex = i;
+  document.getElementById('nom').value = etudiants[i].nom;
+  document.getElementById('tel').value = etudiants[i].tel || "";
+  document.getElementById('classe').value = etudiants[i].classe;
+  document.getElementById('btnAjouter').innerText = "Enregistrer modification";
+  window.scrollTo(0,0);
+  alert("Modifie en haut puis appuie sur Enregistrer modification");
+}
+function retirer(i){
+  if(confirm("Retirer cet étudiant ?")){
+    etudiants.splice(i,1);
+    localStorage.setItem('enr', JSON.stringify(etudiants));
+    afficher();
+  }
+}
+function exporter(){
+  if(etudiants.length === 0){ alert("Liste vide"); return; }
+  let texte = "Liste EnR Connect (" + etudiants.length + " étudiants):\n\n";
+  for(let i=0; i<etudiants.length; i++){
+    texte += "- " + etudiants[i].nom + " | " + etudiants[i].classe + " | " + (etudiants[i].tel || "") + "\n";
+  }
+  let zone = document.createElement('textarea');
+  zone.value = texte;
+  document.body.appendChild(zone);
+  zone.select();
+  document.execCommand('copy');
+  document.body.removeChild(zone);
+  alert("Liste copiée ! Va dans WhatsApp et colle-la avec un appui long + Coller");
+}
+function afficher(){
+  let rech = document.getElementById('recherche').value.toLowerCase();
+  let html = "";
+  for(let i=0; i<etudiants.length; i++){
+    let t = etudiants[i].tel || "";
+    if(rech !== "" && etudiants[i].nom.toLowerCase().indexOf(rech) === -1 && etudiants[i].classe.toLowerCase().indexOf(rech) === -1){ continue; }
+    html += '<div class="carte"><b>' + etudiants[i].nom + '</b><br>' + etudiants[i].classe + ' | ' + t + '<br><button class="btn-modif" onclick="modifier('+i+')">Modifier</button><button class="btn-retirer" onclick="retirer('+i+')">Retirer</button></div>';
+  }
+  if(html === "") html = "Aucun étudiant pour le moment";
+  document.getElementById('liste').innerHTML = html;
+  document.getElementById('compteur').innerText = etudiants.length + " étudiants";
+}
+afficher();
+</script>
+</body>
+</html>
